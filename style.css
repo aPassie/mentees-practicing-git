@@ -1,0 +1,526 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .enemy-sprite .pokemon-img {
+            width: 120px;   /* adjust to match the old CSS size */
+            height: auto;
+            transform: scaleX(-1); /* flips the image horizontally */
+            image-rendering: pixelated; /* crisp for pixel art */
+        }
+
+
+        #playerSprite .pokemon-img {
+            width: 120px;   /* adjust until it matches old div sprite size */
+            height: auto;
+        }
+
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background: #000;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            flex-direction: column;
+        }
+
+        .game-title {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 3px 3px 0px #000;
+        }
+
+        .pokeball {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            margin: 30px auto;
+            animation: bounce 2s infinite;
+        }
+
+        .pokeball-top {
+            width: 60px;
+            height: 30px;
+            background: #ff0000;
+            border-radius: 30px 30px 0 0;
+            border: 3px solid #000;
+            border-bottom: none;
+        }
+
+        .pokeball-bottom {
+            width: 60px;
+            height: 30px;
+            background: #ffffff;
+            border-radius: 0 0 30px 30px;
+            border: 3px solid #000;
+            border-top: none;
+        }
+
+        .pokeball-middle {
+            width: 66px;
+            height: 6px;
+            background: #000;
+            position: absolute;
+            top: 27px;
+            left: -3px;
+        }
+
+        .pokeball-button {
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            border: 3px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 22px;
+            left: 22px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .start-button {
+            background: #ffcc00;
+            border: 4px solid #000;
+            color: #000;
+            padding: 12px 24px;
+            margin: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .start-button:hover {
+            background: #fff200;
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            font-size: 8px;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        /* Overworld */
+        .overworld {
+            background: url("images.png") no-repeat center center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .overworld-canvas {
+            display: block;
+            margin: 0 auto;
+            border: 4px solid #000;
+            background: url("images.png") no-repeat center center;
+    background-size: cover; /* makes it fill inside the border */
+
+        }
+
+        .overworld-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            font-size: 10px;
+        }
+
+        /* Battle Screen */
+        .battle-screen {
+            width: 100%;
+            height: 100%;
+            background: url("battle.png") no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .battle-field {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 40px;
+            position: relative;
+        }
+
+        .enemy-section, .player-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pokemon-info {
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid #000;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 200px;
+        }
+
+        .pokemon-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 12px;
+        }
+
+        .hp-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hp-label {
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        .hp-container {
+            flex: 1;
+            height: 12px;
+            background: #ddd;
+            border: 2px solid #000;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .hp-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .hp-text {
+            font-size: 8px;
+            min-width: 50px;
+            text-align: right;
+        }
+
+       
+
+        .enemy-sprite {
+            transform: scaleX(-1);
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* Charmander Sprite */
+        .charmander-sprite {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .charmander-body {
+            width: 40px;
+            height: 50px;
+            background: #ff6b35;
+            border: 2px solid #000;
+            border-radius: 20px;
+            position: absolute;
+            top: 15px;
+            left: 20px;
+        }
+
+        .charmander-belly {
+            width: 25px;
+            height: 35px;
+            background: #ffeb99;
+            border: 1px solid #000;
+            border-radius: 15px;
+            position: absolute;
+            top: 25px;
+            left: 27px;
+        }
+
+        .charmander-tail {
+            width: 15px;
+            height: 25px;
+            background: #ff4500;
+            border: 2px solid #000;
+            border-radius: 8px;
+            position: absolute;
+            top: 20px;
+            right: 5px;
+        }
+
+        .charmander-tail::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #ff6b35;
+            border: 1px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            left: 3px;
+        }
+
+        .charmander-eyes {
+            width: 6px;
+            height: 6px;
+            background: #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 25px;
+            left: 30px;
+        }
+
+        .charmander-eyes::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #000;
+            border-radius: 50%;
+            position: absolute;
+            left: 10px;
+        }
+
+        /* Bulbasaur Sprite */
+        .bulbasaur-sprite {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .bulbasaur-body {
+            width: 45px;
+            height: 40px;
+            background: #4a9b8e;
+            border: 2px solid #000;
+            border-radius: 20px;
+            position: absolute;
+            top: 25px;
+            left: 17px;
+        }
+
+        .bulbasaur-spots {
+            width: 8px;
+            height: 8px;
+            background: #2d6659;
+            border: 1px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 35px;
+            left: 25px;
+        }
+
+        .bulbasaur-spots::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #2d6659;
+            border: 1px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            left: 15px;
+        }
+
+        .bulbasaur-bulb {
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border: 2px solid #000;
+            border-radius: 10px;
+            position: absolute;
+            top: 10px;
+            left: 30px;
+        }
+
+        .bulbasaur-bulb::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #2E7D32;
+            border: 1px solid #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 6px;
+            left: 6px;
+        }
+
+        .bulbasaur-eyes {
+            width: 6px;
+            height: 6px;
+            background: #000;
+            border-radius: 50%;
+            position: absolute;
+            top: 35px;
+            left: 25px;
+        }
+
+        .bulbasaur-eyes::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #000;
+            border-radius: 50%;
+            position: absolute;
+            left: 12px;
+        }
+
+        /* Battle UI */
+        .battle-ui {
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-top: 4px solid #fff;
+            min-height: 200px;
+        }
+
+        .message-box {
+            background: #fff;
+            color: #000;
+            padding: 15px;
+            border: 3px solid #000;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            font-size: 10px;
+        }
+
+        .move-selection h4 {
+            margin: 0 0 15px 0;
+            font-size: 10px;
+        }
+
+        .moves-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .move-button {
+            background: #4CAF50;
+            border: 3px solid #000;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-family: inherit;
+            font-size: 8px;
+        }
+
+        .move-button:hover:not(:disabled) {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .move-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .special-move {
+            background: #FF5722 !important;
+        }
+
+        .special-move:hover:not(:disabled) {
+            background: #E64A19 !important;
+        }
+
+        .move-name {
+            font-size: 8px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .move-damage {
+            font-size: 6px;
+            opacity: 0.8;
+        }
+
+        .move-special {
+            font-size: 6px;
+            color: #ffeb3b;
+            margin-top: 2px;
+        }
+
+        .ai-turn {
+            text-align: center;
+            padding: 20px;
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .battle-end {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .battle-result {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .return-button {
+            background: #2196F3;
+            border: 3px solid #000;
+            color: white;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 10px;
+        }
+
+        .return-button:hover {
+            background: #1976D2;
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .game-title { font-size: 16px; }
+            .battle-field { flex-direction: column; padding: 20px; }
+            .moves-grid { grid-template-columns: 1fr; }
+            .pokemon-sprite { width: 80px; height: 80px; }
+        }
