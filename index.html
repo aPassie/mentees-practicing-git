@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Mini Adventure</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <div class="game-title">
+                POKÉMON<br>MINI ADVENTURE
+            </div>
+            <div class="pokeball">
+                <div class="pokeball-top"></div>
+                <div class="pokeball-middle"></div>
+                <div class="pokeball-bottom"></div>
+                <div class="pokeball-button"></div>
+            </div>
+            <button class="start-button" onclick="startGame()">START GAME</button>
+            <div class="instructions">
+                <p>Use ARROW KEYS or WASD to move</p>
+                <p>Press SPACE to interact</p>
+            </div>
+        </div>
+
+        <!-- Overworld -->
+        <div id="overworld" class="overworld hidden">
+            <canvas id="gameCanvas" class="overworld-canvas" width="800" height="600"></canvas>
+            <div class="overworld-ui">
+                <p>Ash - Pokémon Trainer</p>
+                <p>Find the Gym Leader to battle!</p>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battleScreen" class="battle-screen hidden">
+            <div class="battle-field">
+                <!-- Enemy Pokemon -->
+                <div class="enemy-section">
+                    <div class="pokemon-info">
+                        <h3>Wild Bulbasaur</h3>
+                        <div class="hp-bar">
+                            <div class="hp-label">HP</div>
+                            <div class="hp-container">
+                                <div id="enemyHpFill" class="hp-fill" style="width: 100%; background-color: #4CAF50;"></div>
+                            </div>
+                            <div id="enemyHpText" class="hp-text">95/95</div>
+                        </div>
+                    </div>
+<div id="enemySprite" class="pokemon-sprite enemy-sprite">
+    <img src="bulbasaur.png" alt="Bulbasaur" class="pokemon-img">
+</div>
+
+                </div>
+
+                <!-- Player Pokemon -->
+                <div class="player-section">
+<div id="playerSprite" class="pokemon-sprite player-sprite">
+    <img src="charmander.png" alt="Charmander" class="pokemon-img">
+</div>
+                    <div class="pokemon-info">
+                        <h3>Charmander</h3>
+                        <div class="hp-bar">
+                            <div class="hp-label">HP</div>
+                            <div class="hp-container">
+                                <div id="playerHpFill" class="hp-fill" style="width: 100%; background-color: #4CAF50;"></div>
+                            </div>
+                            <div id="playerHpText" class="hp-text">100/100</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battle UI -->
+            <div class="battle-ui">
+                <div id="messageBox" class="message-box">
+                    A wild battle begins!
+                </div>
+
+                <div id="moveSelection" class="move-selection">
+                    <h4>Choose a move:</h4>
+                    <div class="moves-grid">
+                        <button class="move-button" onclick="playerAttack('ember')">
+                            <div class="move-name">Ember</div>
+                            <div class="move-damage">DMG: 25</div>
+                        </button>
+                        <button class="move-button" onclick="playerAttack('scratch')">
+                            <div class="move-name">Scratch</div>
+                            <div class="move-damage">DMG: 20</div>
+                        </button>
+                        <button class="move-button special-move" onclick="playerAttack('sacrifice')">
+                            <div class="move-name">Sacrifice</div>
+                            <div class="move-damage">DMG: 35</div>
+                            <div class="move-special">Special</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="aiTurn" class="ai-turn hidden">
+                    Enemy is choosing a move...
+                </div>
+
+                <div id="battleEnd" class="battle-end hidden">
+                    <div id="battleResult" class="battle-result">VICTORY!</div>
+                    <button class="return-button" onclick="returnToOverworld()">Return to Overworld</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gamePhase = 'welcome'; // 'welcome', 'overworld', 'battle'
+        let isPlayerTurn = true;
+        let battleEnded = false;
+        let isAnimating = false;
+
+        // Player and Game Objects
+        let player = {
+            x: 100,
+            y: 100,
+            width: 32,
+            height: 32,
+            speed: 3,
+            direction: 'down'
+        };
+
+        let gymLeader = {
+            x: 400,
+            y: 300,
+            width: 32,
+            height: 32
+        };
+
+        let showInteractionPrompt = false;
+
+        // Pokemon Stats
+        let playerPokemon = {
+            name: 'Charmander',
+            maxHp: 70,
+            currentHp: 70
+        };
+
+        let enemyPokemon = {
+            name: 'Bulbasaur',
+            maxHp: 95,
+            currentHp: 95
+        };
+
+        // Keyboard Input
+        let keys = {};
+
+        // Game Functions
+        function startGame() {
+            gamePhase = 'overworld';
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('overworld').classList.remove('hidden');
+            
+            // Initialize Pokemon
+            playerPokemon.currentHp = playerPokemon.maxHp;
+            enemyPokemon.currentHp = enemyPokemon.maxHp;
+            
+            // Start game loop
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (gamePhase !== 'overworld') return;
+            
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Handle input
+            let newX = player.x;
+            let newY = player.y;
+            let newDirection = player.direction;
+
+            if (keys['w'] || keys['ArrowUp']) {
+                newY -= player.speed;
+                newDirection = 'up';
+            }
+            if (keys['s'] || keys['ArrowDown']) {
+                newY += player.speed;
+                newDirection = 'down';
+            }
+            if (keys['a'] || keys['ArrowLeft']) {
+                newX -= player.speed;
+                newDirection = 'left';
+            }
+            if (keys['d'] || keys['ArrowRight']) {
+                newX += player.speed;
+                newDirection = 'right';
+            }
+
+            // Boundary checking
+            newX = Math.max(0, Math.min(canvas.width - player.width, newX));
+            newY = Math.max(0, Math.min(canvas.height - player.height, newY));
+
+            // Update player position
+            player.x = newX;
+            player.y = newY;
+            player.direction = newDirection;
+
+            // Check proximity to gym leader
+            const distance = Math.sqrt(
+                Math.pow((newX + player.width / 2) - (gymLeader.x + gymLeader.width / 2), 2) +
+                Math.pow((newY + player.height / 2) - (gymLeader.y + gymLeader.height / 2), 2)
+            );
+
+            showInteractionPrompt = distance < 50;
+
+            // Check for battle trigger
+            if (showInteractionPrompt && (keys[' '] || keys['Space'])) {
+                startBattle();
+                return;
+            }
+
+            // Clear canvas and draw
+            ctx.fillStyle = '#4a7c59';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grass pattern
+            ctx.fillStyle = '#5a8c69';
+            for (let x = 0; x < canvas.width; x += 20) {
+                for (let y = 0; y < canvas.height; y += 20) {
+                    if ((x + y) % 40 === 0) {
+                        ctx.fillRect(x, y, 4, 4);
+                    }
+                }
+            }
+
+            // Draw gym leader
+            drawGymLeader(ctx);
+
+            // Draw player (Ash)
+            drawPlayer(ctx);
+
+            // Draw interaction prompt
+            if (showInteractionPrompt) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(player.x - 10, player.y - 30, 52, 20);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '8px monospace';
+                ctx.fillText('Press SPACE', player.x - 6, player.y - 18);
+                ctx.fillText('to battle!', player.x - 2, player.y - 10);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawPlayer(ctx) {
+            // Draw Ash sprite (simplified pixel art)
+            // Body
+            ctx.fillStyle = '#2c5aa0'; // Blue shirt
+            ctx.fillRect(player.x + 8, player.y + 16, 16, 12);
+            
+            // Head
+            ctx.fillStyle = '#ffdbac'; // Skin color
+            ctx.fillRect(player.x + 10, player.y + 4, 12, 12);
+            
+            // Hair
+            ctx.fillStyle = '#4a4a4a'; // Dark hair
+            ctx.fillRect(player.x + 8, player.y + 2, 16, 6);
+            
+            // Hat
+            ctx.fillStyle = '#ff0000'; // Red hat
+            ctx.fillRect(player.x + 6, player.y, 20, 8);
+            
+            // Eyes
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(player.x + 12, player.y + 8, 2, 2);
+            ctx.fillRect(player.x + 18, player.y + 8, 2, 2);
+            
+            // Legs
+            ctx.fillStyle = '#003366'; // Dark blue pants
+            ctx.fillRect(player.x + 10, player.y + 28, 5, 4);
+            ctx.fillRect(player.x + 17, player.y + 28, 5, 4);
+        }
+
+        function drawGymLeader(ctx) {
+            // Draw Gym Leader sprite (simplified pixel art)
+            // Body
+            ctx.fillStyle = '#8B4513'; // Brown shirt
+            ctx.fillRect(gymLeader.x + 8, gymLeader.y + 16, 16, 12);
+            
+            // Head
+            ctx.fillStyle = '#ffdbac'; // Skin color
+            ctx.fillRect(gymLeader.x + 10, gymLeader.y + 4, 12, 12);
+            
+            // Hair
+            ctx.fillStyle = '#8B4513'; // Brown hair
+            ctx.fillRect(gymLeader.x + 8, gymLeader.y + 2, 16, 6);
+            
+            // Eyes
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(gymLeader.x + 12, gymLeader.y + 8, 2, 2);
+            ctx.fillRect(gymLeader.x + 18, gymLeader.y + 8, 2, 2);
+            
+            // Legs
+            ctx.fillStyle = '#654321'; // Brown pants
+            ctx.fillRect(gymLeader.x + 10, gymLeader.y + 28, 5, 4);
+            ctx.fillRect(gymLeader.x + 17, gymLeader.y + 28, 5, 4);
+            
+            // Gym Leader badge
+            ctx.fillStyle = '#FFD700'; // Gold badge
+            ctx.fillRect(gymLeader.x + 14, gymLeader.y + 18, 4, 4);
+        }
+
+        function startBattle() {
+            gamePhase = 'battle';
+            document.getElementById('overworld').classList.add('hidden');
+            document.getElementById('battleScreen').classList.remove('hidden');
+            
+            // Reset battle state
+            isPlayerTurn = true;
+            battleEnded = false;
+            isAnimating = false;
+            
+            // Reset Pokemon HP
+            playerPokemon.currentHp = playerPokemon.maxHp;
+            enemyPokemon.currentHp = enemyPokemon.maxHp;
+            
+            updateHpBars();
+            updateBattleUI();
+            
+            document.getElementById('messageBox').textContent = 'A wild battle begins!';
+        }
+
+        function playerAttack(moveType) {
+            if (!isPlayerTurn || battleEnded || isAnimating) return;
+
+            isAnimating = true;
+            
+            // Animate player sprite
+            document.getElementById('playerSprite').classList.add('shake');
+            setTimeout(() => {
+                document.getElementById('playerSprite').classList.remove('shake');
+            }, 500);
+
+            let damage = 0;
+            let message = '';
+
+            switch (moveType) {
+                case 'ember':
+                    damage = 25;
+                    message = 'Charmander used Ember!';
+                    break;
+                case 'scratch':
+                    damage = 20;
+                    message = 'Charmander used Scratch!';
+                    break;
+                case 'sacrifice':
+                    damage = 35;
+                    playerPokemon.currentHp = Math.max(0, playerPokemon.currentHp / 2);
+                    message = 'Charmander used Sacrifice! Charmander sacrificed 10 HP for extra power!';
+                    break;
+            }
+
+            enemyPokemon.currentHp = Math.max(0, enemyPokemon.currentHp - damage);
+            document.getElementById('messageBox').textContent = message;
+            
+            updateHpBars();
+
+            setTimeout(() => {
+                if (enemyPokemon.currentHp <= 0) {
+                    endBattle('player');
+                } else {
+                    isPlayerTurn = false;
+                    isAnimating = false;
+                    updateBattleUI();
+                    setTimeout(enemyAttack, 1500);
+                }
+            }, 1000);
+        }
+
+        function enemyAttack() {
+            if (battleEnded) return;
+
+            isAnimating = true;
+            
+            // Animate enemy sprite
+            document.getElementById('enemySprite').classList.add('shake');
+            setTimeout(() => {
+                document.getElementById('enemySprite').classList.remove('shake');
+            }, 500);
+
+            const moves = [
+                { name: 'Vine Whip', damage: 22 },
+                { name: 'Tackle', damage: 18 },
+                { name: 'Leech Seed', damage: 15 }
+            ];
+
+            const randomMove = moves[Math.floor(Math.random() * moves.length)];
+            
+            playerPokemon.currentHp = Math.max(0, playerPokemon.currentHp - randomMove.damage);
+            document.getElementById('messageBox').textContent = `Enemy Bulbasaur used ${randomMove.name}!`;
+            
+            updateHpBars();
+
+            setTimeout(() => {
+                if (playerPokemon.currentHp <= 0) {
+                    endBattle('enemy');
+                } else {
+                    isPlayerTurn = true;
+                    isAnimating = false;
+                    updateBattleUI();
+                }
+            }, 1000);
+        }
+
+        function endBattle(winner) {
+            battleEnded = true;
+            
+            if (winner === 'player') {
+                document.getElementById('battleResult').textContent = 'VICTORY!';
+                document.getElementById('messageBox').textContent = 'Bulbasaur fainted! You won the battle!';
+            } else {
+                document.getElementById('battleResult').textContent = 'DEFEAT!';
+                document.getElementById('messageBox').textContent = 'Charmander fainted! You lost the battle!';
+            }
+            
+            updateBattleUI();
+        }
+
+        function updateHpBars() {
+            const playerHpPercentage = Math.max(0, (playerPokemon.currentHp / playerPokemon.maxHp) * 100);
+            const enemyHpPercentage = Math.max(0, (enemyPokemon.currentHp / enemyPokemon.maxHp) * 100);
+            
+            document.getElementById('playerHpFill').style.width = playerHpPercentage + '%';
+            document.getElementById('enemyHpFill').style.width = enemyHpPercentage + '%';
+            
+            // Update HP colors
+            document.getElementById('playerHpFill').style.backgroundColor = getHpColor(playerHpPercentage);
+            document.getElementById('enemyHpFill').style.backgroundColor = getHpColor(enemyHpPercentage);
+            
+            document.getElementById('playerHpText').textContent = `${playerPokemon.currentHp}/${playerPokemon.maxHp}`;
+            document.getElementById('enemyHpText').textContent = `${enemyPokemon.currentHp}/${enemyPokemon.maxHp}`;
+        }
+
+        function getHpColor(percentage) {
+            if (percentage > 60) return '#4CAF50';
+            if (percentage > 30) return '#FF9800';
+            return '#F44336';
+        }
+
+        function updateBattleUI() {
+            if (battleEnded) {
+                document.getElementById('moveSelection').classList.add('hidden');
+                document.getElementById('aiTurn').classList.add('hidden');
+                document.getElementById('battleEnd').classList.remove('hidden');
+            } else if (isPlayerTurn && !isAnimating) {
+                document.getElementById('moveSelection').classList.remove('hidden');
+                document.getElementById('aiTurn').classList.add('hidden');
+                document.getElementById('battleEnd').classList.add('hidden');
+            } else {
+                document.getElementById('moveSelection').classList.add('hidden');
+                document.getElementById('aiTurn').classList.remove('hidden');
+                document.getElementById('battleEnd').classList.add('hidden');
+            }
+        }
+
+        function returnToOverworld() {
+            gamePhase = 'overworld';
+            document.getElementById('battleScreen').classList.add('hidden');
+            document.getElementById('overworld').classList.remove('hidden');
+            
+            // Reset Pokemon
+            playerPokemon.currentHp = playerPokemon.maxHp;
+            enemyPokemon.currentHp = enemyPokemon.maxHp;
+            
+            gameLoop();
+        }
+
+        // Event Listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            keys[e.code] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+            keys[e.code] = false;
+        });
+
+        // Prevent context menu on right click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
